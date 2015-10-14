@@ -1,8 +1,11 @@
 package kr.co.leehana.accounts;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CollectionId;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -25,7 +28,10 @@ public class Account {
 	@GeneratedValue
 	private long id;
 
+	@Column(unique = true)
 	private String username;
+
+	@JsonIgnore
 	private String password;
 	private String email;
 	private String fullName;
