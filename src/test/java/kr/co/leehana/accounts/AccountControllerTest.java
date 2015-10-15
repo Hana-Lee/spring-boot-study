@@ -1,6 +1,5 @@
 package kr.co.leehana.accounts;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kr.co.leehana.App;
 import org.junit.Before;
@@ -14,9 +13,11 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -31,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = App.class)
 @WebAppConfiguration
+@Transactional
 public class AccountControllerTest {
 
 	@Autowired
@@ -38,6 +40,9 @@ public class AccountControllerTest {
 
 	@Autowired
 	private ObjectMapper objectMapper;
+
+	@Autowired
+	private AccountService accountService;
 
 	private MockMvc mockMvc;
 
@@ -59,8 +64,8 @@ public class AccountControllerTest {
 		//{"id":1,"username":"voyaging","email":null,"fullName":null,"joined":1444821003172,"updated":1444821003172}
 		resultActions.andExpect(jsonPath("$.username", is("voyaging")));
 
-		resultActions = mockMvc.perform(post("/accounts").contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(createDto)));
+		resultActions = mockMvc.perform(post("/accounts").contentType(MediaType.APPLICATION_JSON).content(objectMapper
+				.writeValueAsString(createDto)));
 		resultActions.andDo(print());
 		resultActions.andExpect(status().isBadRequest());
 		//{"message":"[voyaging] 중복된 username 입니다.","errorCode":"duplicated.username.exception","errors":null}
@@ -73,9 +78,26 @@ public class AccountControllerTest {
 		createDto.setUsername(" ");
 		createDto.setPassword("1234");
 
-		ResultActions resultActions = mockMvc.perform(post("/accounts").contentType(MediaType.APPLICATION_JSON).content
-				(objectMapper.writeValueAsString(createDto)));
+		ResultActions resultActions = mockMvc.perform(post("/accounts").contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(createDto)));
 		resultActions.andDo(print());
 		resultActions.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	public void getAccounts() throws Exception {
+		AccountDto.Create createDto = new AccountDto.Create();
+		createDto.setUsername("voyaging");
+		createDto.setPassword("password");
+
+		accountService.createAccount(createDto);
+
+		ResultActions resultGetActions = mockMvc.perform(get("/accounts"));
+
+		// {"content":[{"id":1,"username":"voyaging","fullName":null,"email":null,"joined":1444836037938,
+		// "updated":1444836037938}],"totalElements":1,"totalPages":1,"last":true,"number":0,"size":20,"sort":null,
+		// "numberOfElements":1,"first":true}
+		resultGetActions.andDo(print());
+		resultGetActions.andExpect(status().isOk());
 	}
 }

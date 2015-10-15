@@ -3,6 +3,9 @@ package kr.co.leehana.accounts;
 import kr.co.leehana.commons.ErrorResponse;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -13,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by Hana Lee on 2015-10-12 오전 11:27
@@ -25,6 +30,9 @@ public class AccountController {
 
 	@Autowired
 	private AccountService accountService;
+
+	@Autowired
+	private AccountRepository accountRepository;
 
 	@Autowired
 	private ModelMapper modelMapper;
@@ -49,5 +57,16 @@ public class AccountController {
 		errorResponse.setMessage("[" + ex.getUsername() + "] 중복된 username 입니다.");
 		errorResponse.setErrorCode("duplicated.username.exception");
 		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+	}
+
+	@RequestMapping(value = "/accounts", method = RequestMethod.GET)
+	public ResponseEntity getAccounts(Pageable pageable) {
+		Page<Account> pages = accountRepository.findAll(pageable);
+		List<AccountDto.Response> content = pages.getContent()
+				.parallelStream()
+				.map(account -> modelMapper.map(account, AccountDto.Response.class))
+				.collect(Collectors.toList());
+		PageImpl<AccountDto.Response> result = new PageImpl<>(content, pageable, pages.getTotalElements());
+		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 }
