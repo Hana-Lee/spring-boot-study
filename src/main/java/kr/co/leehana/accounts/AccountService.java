@@ -1,5 +1,6 @@
 package kr.co.leehana.accounts;
 
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,7 +16,10 @@ import java.util.Date;
  */
 @Service
 @Transactional
+@Slf4j
 public class AccountService {
+
+//	private Logger log = LoggerFactory.getLogger(getClass());
 
 	@Autowired
 	private AccountRepository accountRepository;
@@ -27,6 +31,7 @@ public class AccountService {
 		Account account = modelMapper.map(dto, Account.class);
 		String username = dto.getUsername();
 		if (accountRepository.findByUsername(username) != null) {
+			log.error("user duplicated exception. {}", username);
 			throw new UserDuplicatedException(username);
 		}
 
