@@ -10,14 +10,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 /**
  * Created by Hana Lee on 2015-10-12 오전 11:27
@@ -37,7 +42,7 @@ public class AccountController {
 	@Autowired
 	private ModelMapper modelMapper;
 
-	@RequestMapping(value = "/accounts", method = RequestMethod.POST)
+	@RequestMapping(value = "/accounts", method = POST)
 	public ResponseEntity createAccount(@RequestBody @Valid AccountDto.Create create, BindingResult bindingResult) {
 		if (bindingResult.hasErrors()) {
 			ErrorResponse errorResponse = new ErrorResponse();
@@ -51,22 +56,49 @@ public class AccountController {
 //		return new ResponseEntity<>(modelMapper.map(newAccount, AccountDto.Response.class), HttpStatus.CREATED);
 	}
 
+	@RequestMapping(value = "/accounts", method = GET)
+	@ResponseStatus(value = HttpStatus.OK)
+	public PageImpl<AccountDto.Response> getAccounts(Pageable pageable) {
+		Page<Account> pages = accountRepository.findAll(pageable);
+		List<AccountDto.Response> content = pages.getContent().parallelStream().map(account -> modelMapper.map
+				(account, AccountDto.Response.class)).collect(Collectors.toList());
+		return new PageImpl<>(content, pageable, pages.getTotalElements());
+	}
+
+	@RequestMapping(value = "/accounts/{id}", method = GET)
+	@ResponseStatus(HttpStatus.OK)
+	public AccountDto.Response getAccount(@PathVariable Long id) {
+		return modelMapper.map(accountService.getAccount(id), AccountDto.Response.class);
+	}
+
+	// 전체 업데이트 (전체 필드 업데이트 PUT)
+	// 부분 업데이트(username or username, password or username, fullName : PATCH)
+	@RequestMapping(value = "/accounts/{id}", method = PUT)
+	public ResponseEntity updateAccount(@PathVariable Long id, @RequestBody @Valid AccountDto.Update updateDto,
+	                                    BindingResult bindingResult) {
+		if (bindingResult.hasErrors()) {
+			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+		}
+
+		Account updatedAccount = accountService.updateAccount(id, updateDto);
+		return new ResponseEntity<>(modelMapper.map(updatedAccount, AccountDto.Response.class), HttpStatus.OK);
+	}
+
 	@ExceptionHandler(UserDuplicatedException.class)
-	public ResponseEntity handleUserDuplicatedException(UserDuplicatedException ex) {
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	public ErrorResponse handleUserDuplicatedException(UserDuplicatedException ex) {
 		ErrorResponse errorResponse = new ErrorResponse();
 		errorResponse.setMessage("[" + ex.getUsername() + "] 중복된 username 입니다.");
 		errorResponse.setErrorCode("duplicated.username.exception");
-		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+		return errorResponse;
 	}
 
-	@RequestMapping(value = "/accounts", method = RequestMethod.GET)
-	public ResponseEntity getAccounts(Pageable pageable) {
-		Page<Account> pages = accountRepository.findAll(pageable);
-		List<AccountDto.Response> content = pages.getContent()
-				.parallelStream()
-				.map(account -> modelMapper.map(account, AccountDto.Response.class))
-				.collect(Collectors.toList());
-		PageImpl<AccountDto.Response> result = new PageImpl<>(content, pageable, pages.getTotalElements());
-		return new ResponseEntity<>(result, HttpStatus.OK);
+	@ExceptionHandler(AccountNotFoundException.class)
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	public ErrorResponse handleAccountNotFoundException(AccountNotFoundException e) {
+		ErrorResponse errorResponse = new ErrorResponse();
+		errorResponse.setMessage("[" + e.getId() + "] 에 해당하는 계정이 없습니다.");
+		errorResponse.setErrorCode("account.not.found.exception");
+		return errorResponse;
 	}
 }

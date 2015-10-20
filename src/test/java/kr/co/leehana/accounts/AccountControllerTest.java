@@ -19,6 +19,7 @@ import org.springframework.web.context.WebApplicationContext;
 import static org.hamcrest.CoreMatchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -53,9 +54,7 @@ public class AccountControllerTest {
 
 	@Test
 	public void createAccount() throws Exception {
-		AccountDto.Create createDto = new AccountDto.Create();
-		createDto.setUsername("voyaging");
-		createDto.setPassword("password");
+		AccountDto.Create createDto = accountCreateDtoFixture();
 
 		ResultActions resultActions = mockMvc.perform(post("/accounts").contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(createDto)));
@@ -86,9 +85,7 @@ public class AccountControllerTest {
 
 	@Test
 	public void getAccounts() throws Exception {
-		AccountDto.Create createDto = new AccountDto.Create();
-		createDto.setUsername("voyaging");
-		createDto.setPassword("password");
+		AccountDto.Create createDto = accountCreateDtoFixture();
 
 		accountService.createAccount(createDto);
 
@@ -99,5 +96,41 @@ public class AccountControllerTest {
 		// "numberOfElements":1,"first":true}
 		resultGetActions.andDo(print());
 		resultGetActions.andExpect(status().isOk());
+	}
+
+	private AccountDto.Create accountCreateDtoFixture() {
+		AccountDto.Create createDto = new AccountDto.Create();
+		createDto.setUsername("voyaging");
+		createDto.setPassword("password");
+		return createDto;
+	}
+
+	@Test
+	public void getAccount() throws Exception {
+		AccountDto.Create createDto = accountCreateDtoFixture();
+		Account account = accountService.createAccount(createDto);
+		ResultActions resultActions = mockMvc.perform(get("/accounts/" + account.getId()));
+		resultActions.andDo(print());
+		resultActions.andExpect(status().isOk());
+	}
+
+	@Test
+	public void updateAccount() throws Exception {
+		AccountDto.Create createDto = accountCreateDtoFixture();
+		Account account = accountService.createAccount(createDto);
+
+		AccountDto.Update updateDto = new AccountDto.Update();
+		updateDto.setFullName("Hana Lee");
+		updateDto.setPassword("pass");
+
+		ResultActions resultActions = mockMvc.perform(put("/accounts/" + account.getId()).contentType(MediaType
+				.APPLICATION_JSON).content(objectMapper.writeValueAsString(updateDto)));
+
+		resultActions.andDo(print());
+		resultActions.andExpect(status().isOk());
+		resultActions.andExpect(jsonPath("$.fullName", is("Hana Lee")));
+
+		// 응답으로 password 를 넘겨주지 않기 때문에 테스트가 불가.
+		// resultActions.andExpect(jsonPath("$.password", is("pass")));
 	}
 }
