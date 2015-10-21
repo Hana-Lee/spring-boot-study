@@ -17,9 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -132,5 +130,19 @@ public class AccountControllerTest {
 
 		// 응답으로 password 를 넘겨주지 않기 때문에 테스트가 불가.
 		// resultActions.andExpect(jsonPath("$.password", is("pass")));
+	}
+
+	@Test
+	public void deleteAccount() throws Exception {
+		ResultActions resultActions = mockMvc.perform(delete("/accounts/1"));
+		resultActions.andDo(print());
+		resultActions.andExpect(status().isBadRequest());
+
+		AccountDto.Create createDto = accountCreateDtoFixture();
+		Account account = accountService.createAccount(createDto);
+
+		resultActions = mockMvc.perform(delete("/accounts/" + account.getId()));
+		resultActions.andDo(print());
+		resultActions.andExpect(status().isNoContent());
 	}
 }

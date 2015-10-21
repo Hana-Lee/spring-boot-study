@@ -20,9 +20,7 @@ import javax.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
-import static org.springframework.web.bind.annotation.RequestMethod.PUT;
+import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 /**
  * Created by Hana Lee on 2015-10-12 오전 11:27
@@ -82,6 +80,12 @@ public class AccountController {
 
 		Account updatedAccount = accountService.updateAccount(id, updateDto);
 		return new ResponseEntity<>(modelMapper.map(updatedAccount, AccountDto.Response.class), HttpStatus.OK);
+	}
+
+	@RequestMapping(value = "/accounts/{id}", method = DELETE)
+	public ResponseEntity deleteAccount(@PathVariable Long id) {
+		accountService.deleteAccount(id);
+		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
 	@ExceptionHandler(UserDuplicatedException.class)
