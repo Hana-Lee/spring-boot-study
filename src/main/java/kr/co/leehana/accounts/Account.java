@@ -3,14 +3,8 @@ package kr.co.leehana.accounts;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.CollectionId;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 import java.util.Date;
 
 /**
@@ -41,4 +35,6 @@ public class Account {
 
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date updated;
+
+	private boolean admin;
 }
