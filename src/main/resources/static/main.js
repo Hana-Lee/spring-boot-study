@@ -48,6 +48,13 @@ var Main = React.createClass({
 				<div className="starter-template">
 					<h1>Bootstrap starter template</h1>
 					<p class="lead">Use this document as a way to quickly start any new project.<br /> All you get is this text and a mostly barebones HTML document.</p>
+					<form id="login-form" action="/accounts" method="post">
+						<label>Username</label>
+						<input id="username" type="text" name="username"/>
+						<label>Password</label>
+						<input id="password" type="password" name="password"/>
+						<input type="button" value="sign up" onclick="login();return false;"/>
+					</form>
 				</div>
 			</div>{/* .container */}
 		</div>);
@@ -80,3 +87,40 @@ var App = React.createClass({
 });
 
 React.render(<App/>, document.body);
+var login = function() {
+	console.log('login button clicked');
+	var username, password;
+	username = $("#username").val();
+	password = $("#password").val();
+	//$.post({
+	//	url: '/accounts',
+	//	method: 'POST',
+	//	type:'json',
+	//	async: true,
+	//	data: {
+	//		username: username, password: password
+	//	},
+	//	success: function(user) {
+	//		console.log(user);
+	//	}
+	//});
+	$.ajax({
+		url: '/accounts',
+		type: 'POST',
+		dataType: 'json',
+		contentType: 'application/json',
+		data: JSON.stringify({
+			username: username,
+			password: password
+		}),
+		success: function(data) {
+			console.log(data);
+		}
+	});
+	//$.post('/accounts', {username:username, password:password}, function (user) {
+	//	 Modify the DOM here
+		//console.log(user);
+	//}, 'json');
+
+	return false;
+};
